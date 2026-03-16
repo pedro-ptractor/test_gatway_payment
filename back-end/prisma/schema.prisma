@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String         @id @default(cuid())
+  name             String
+  email            String         @unique
+  passwordHash     String
+  stripeCustomerId String?        @unique
+  subscriptions    Subscription[]
+  payments         Payment[]
+  updatedAt        DateTime       @updatedAt
+  createdAt        DateTime       @default(now())
+}
+
+model Plan {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  name          String
+  description   String?
+  priceCents    Int
+  currency      String         @default("brl")
+  interval      PlanInterval
+  stripePriceId String         @unique
+  active        Boolean        @default(true)
+  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Subscription {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  stripeSubscriptionId    String  @unique
+  stripeCheckoutSessionId String? @unique
+
+  status SubscriptionStatus
+
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+
+  cancelAtPeriodEnd Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments Payment[]
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  stripeInvoiceId String? @unique
+
+  amountCents Int
+  currency    String
+
+  status PaymentStatus
+
+  paidAt DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+enum PlanInterval {
+  month
+  year
+}
+
+enum SubscriptionStatus {
+  active
+  past_due
+  canceled
+  incomplete
+  incomplete_expired
+  trialing
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
