@@ -259,7 +259,6 @@ export async function handleStripeWebhook(
               userId,
               planId,
               stripeSubscriptionId,
-              stripeCheckoutSessionId: session.id,
               status: toSubscriptionStatus(stripeSubscription.status),
               currentPeriodStart: period?.start ?? new Date(),
               currentPeriodEnd: period?.end ?? new Date(),
@@ -313,15 +312,11 @@ export async function handleStripeWebhook(
           : null;
 
         if (!existingPayment) {
-          const stripePaymentIntentId =
-            getStripePaymentIntentIdFromInvoice(invoice);
-
           await prisma.payment.create({
             data: {
               userId: localSubscription.userId,
               subscriptionId: localSubscription.id,
               stripeInvoiceId: invoice.id,
-              stripePaymentIntentId,
               amountCents: invoice.amount_paid ?? 0,
               currency: invoice.currency ?? 'brl',
               status: $Enums.PaymentStatus.paid,
@@ -370,15 +365,11 @@ export async function handleStripeWebhook(
           : null;
 
         if (!existingPayment) {
-          const stripePaymentIntentId =
-            getStripePaymentIntentIdFromInvoice(invoice);
-
           await prisma.payment.create({
             data: {
               userId: localSubscription.userId,
               subscriptionId: localSubscription.id,
               stripeInvoiceId: invoice.id,
-              stripePaymentIntentId,
               amountCents: invoice.amount_due ?? 0,
               currency: invoice.currency ?? 'brl',
               status: $Enums.PaymentStatus.failed,
@@ -396,6 +387,35 @@ export async function handleStripeWebhook(
         break;
       }
 
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as Stripe.Subscription;
+        const period = getSubscriptionPeriod(subscription);
+
+        await prisma.subscription.updateMany({
+          where: {
+            stripeSubscriptionId: subscription.id,
+          },
+          data: {
+            status: toSubscriptionStatus(subscription.status),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            cancelAt: toDateFromUnix(subscription.cancel_at),
+            ...(period && {
+              currentPeriodStart: period.start,
+              currentPeriodEnd: period.end,
+            }),
+          },
+        });
+
+        console.log('Subscription updated:', {
+          id: subscription.id,
+          status: subscription.status,
+          cancelAt: subscription.cancel_at,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        });
+
+        break;
+      }
+
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
 
@@ -404,6 +424,7 @@ export async function handleStripeWebhook(
           data: {
             status: $Enums.SubscriptionStatus.canceled,
             cancelAtPeriodEnd: false,
+            cancelAt: null,
           },
         });
 

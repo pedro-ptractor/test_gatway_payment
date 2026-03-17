@@ -13,8 +13,13 @@ export const app = Fastify({});
 app.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
   const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body as unknown as ArrayBuffer);
   (req as FastifyRequest & { rawBody?: Buffer }).rawBody = buffer;
+  const raw = buffer.toString('utf8').trim();
+  if (!raw) {
+    done(null, {});
+    return;
+  }
   try {
-    done(null, JSON.parse(buffer.toString('utf8')));
+    done(null, JSON.parse(raw));
   } catch (e) {
     done(e as Error, undefined);
   }
@@ -48,6 +53,7 @@ app.setErrorHandler((error, _, reply) => {
     });
   }
 
+  console.error('Unhandled error:', error);
   return reply.status(500).send({
     error: 'Internal server error',
   });

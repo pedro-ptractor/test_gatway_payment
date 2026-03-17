@@ -50,6 +50,22 @@ export type Plan = {
   active: boolean;
 };
 
+export type CreateBillingPortalSessionResponse = { url: string };
+
+export async function createBillingPortalSession(): Promise<string> {
+  const response = await apiFetch<CreateBillingPortalSessionResponse>(
+    '/stripe/billing-portal',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+  );
+
+  console.log(response);
+  return response.url;
+}
 export async function fetchPlans(): Promise<Plan[]> {
   return apiFetch<Plan[]>('/plans');
 }
