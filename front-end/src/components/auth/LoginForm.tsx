@@ -3,7 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { login } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 export type LoginFormProps = {
@@ -18,7 +24,9 @@ export function LoginForm({ onLoginSuccess, className }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(
+    e: React.SubmitEvent<HTMLFormElement>,
+  ): Promise<void> {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -35,57 +43,65 @@ export function LoginForm({ onLoginSuccess, className }: LoginFormProps) {
 
   return (
     <Card className={cn('w-full', className)}>
-      <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-semibold tracking-tight">Entrar</CardTitle>
+      <CardHeader className='space-y-1 text-center'>
+        <CardTitle className='text-2xl font-semibold tracking-tight'>
+          Entrar
+        </CardTitle>
         <CardDescription>Use seu e-mail e senha para acessar</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium leading-none">
+        <form onSubmit={handleSubmit} className='space-y-4'>
+          <div className='space-y-2'>
+            <label htmlFor='email' className='text-sm font-medium leading-none'>
               E-mail
             </label>
             <Input
-              id="email"
-              type="email"
-              placeholder="nome@exemplo.com"
+              id='email'
+              type='email'
+              placeholder='nome@exemplo.com'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              autoComplete="email"
+              autoComplete='email'
               disabled={loading}
-              className="h-10"
+              className='h-10'
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium leading-none">
+          <div className='space-y-2'>
+            <label
+              htmlFor='password'
+              className='text-sm font-medium leading-none'
+            >
               Senha
             </label>
             <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
+              id='password'
+              type='password'
+              placeholder=''
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              autoComplete="current-password"
+              autoComplete='current-password'
               disabled={loading}
-              className="h-10"
+              className='h-10'
             />
           </div>
           {error && (
-            <p className="text-sm text-destructive" role="alert">
+            <p className='text-sm text-destructive' role='alert'>
               {error}
             </p>
           )}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type='submit' className='w-full' disabled={loading}>
             {loading ? 'Entrando...' : 'Entrar'}
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-muted-foreground">
+        <p className='mt-4 text-center text-sm text-muted-foreground'>
           Ainda não tem conta?{' '}
-          <Link to="/register" className="text-primary underline-offset-4 hover:underline">
+          <Link
+            to='/register'
+            className='text-primary underline-offset-4 hover:underline'
+          >
             Criar conta
           </Link>
         </p>
