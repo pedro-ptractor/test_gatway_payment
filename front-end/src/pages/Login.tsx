@@ -1,77 +1,30 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../lib/api';
+import { LoginForm } from '@/components/auth/LoginForm';
 
 type LoginProps = {
   onLoginSuccess?: () => void;
 };
 
 export function Login({ onLoginSuccess }: LoginProps) {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      await login(email, password);
-      onLoginSuccess?.();
-      navigate('/plans', { replace: true });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <div style={{ padding: 24, maxWidth: 400, margin: '0 auto' }}>
-      <h1>Entrar</h1>
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
-      >
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span>E-mail</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            style={{ padding: 8, fontSize: 16 }}
-          />
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span>Senha</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-            autoComplete="current-password"
-            style={{ padding: 8, fontSize: 16 }}
-          />
-        </label>
-        {error && (
-          <p style={{ color: 'red', margin: 0, fontSize: 14 }}>{error}</p>
-        )}
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ padding: 12, fontSize: 16, cursor: loading ? 'wait' : 'pointer' }}
-        >
-          {loading ? 'Entrando...' : 'Entrar'}
-        </button>
-      </form>
-      <p style={{ marginTop: 16, fontSize: 14, color: '#666' }}>
-        Ainda não tem conta? <Link to="/register">Criar conta</Link>
-      </p>
+    <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
+      <div className="w-full max-w-sm md:max-w-4xl">
+        <div className="grid gap-6 md:grid-cols-2 md:gap-12">
+          <div className="flex flex-col justify-center">
+            <LoginForm onLoginSuccess={onLoginSuccess} />
+          </div>
+          <div className="relative hidden overflow-hidden rounded-xl bg-muted md:block">
+            <div
+              className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/5 to-transparent"
+              aria-hidden
+            />
+            <div className="relative flex h-full min-h-[320px] items-center justify-center p-8">
+              <p className="text-center text-sm font-medium text-muted-foreground">
+                Conteúdo da sua assinatura em um só lugar.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

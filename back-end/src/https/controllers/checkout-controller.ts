@@ -5,6 +5,7 @@ import { stripe } from '../../lib/stripe.js';
 import { env } from '../../env/index.js';
 import { HttpError } from '../erros/index.js';
 import { prisma } from '../../lib/prisma.js';
+import { ensureLocalSubscription } from '../../helpers/stripe/stripe-webhook-helpers.js';
 
 export async function createCheckoutSession(
   req: FastifyRequest,
@@ -89,5 +90,55 @@ export async function createCheckoutSession(
 
   return reply.status(200).send({
     checkoutUrl: session.url,
+  });
+}
+
+export async function confirmCheckoutSession(
+  req: FastifyRequest,
+  reply: FastifyReply,
+) {
+  console.log('confirmCheckoutSession', req.query);
+  const confirmSessionQuerySchema = z.object({
+    session_id: z.string().min(1),
+  });
+  const { session_id: sessionId } = confirmSessionQuerySchema.parse(req.query);
+  const userId = req.user.id;
+
+  const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    expand: ['subscription'],
+  });
+
+  const sessionUserId =
+    session.metadata?.userId ?? session.client_reference_id ?? null;
+  if (sessionUserId !== userId) {
+    throw new HttpError('Session does not belong to this user', 403);
+  }
+
+  const stripeSubscriptionId =
+    typeof session.subscription === 'string'
+      ? session.subscription
+      : session.subscription?.id;
+
+  if (!stripeSubscriptionId) {
+    return reply.status(200).send({
+      status: 'pending',
+      subscriptionId: null,
+      planId: null,
+    });
+  }
+
+  const subscription = await ensureLocalSubscription(stripeSubscriptionId);
+  if (!subscription) {
+    return reply.status(200).send({
+      status: 'pending',
+      subscriptionId: null,
+      planId: null,
+    });
+  }
+
+  return reply.status(200).send({
+    status: subscription.status,
+    subscriptionId: subscription.id,
+    planId: subscription.planId,
   });
 }

@@ -1,11 +1,19 @@
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function CheckoutCancel() {
   return (
-    <div style={{ padding: 24, textAlign: 'center', maxWidth: 400, margin: '0 auto' }}>
-      <h1>Checkout cancelado</h1>
-      <p>Você cancelou o processo de pagamento.</p>
-      <Link to="/plans">Voltar aos planos</Link>
-    </div>
+    <Card className="mx-auto max-w-md">
+      <CardHeader>
+        <CardTitle>Checkout cancelado</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-muted-foreground">Você cancelou o processo de pagamento.</p>
+        <Button asChild variant="outline">
+          <Link to="/plans">Voltar aos planos</Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

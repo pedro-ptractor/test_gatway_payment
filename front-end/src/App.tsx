@@ -1,51 +1,91 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { Plans } from './pages/Plans';
-import { CheckoutSuccess } from './pages/CheckoutSuccess';
-import { CheckoutCancel } from './pages/CheckoutCancel';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { isAuthenticated, logout } from './lib/api';
-import './App.css';
+import {
+  SidebarProvider,
+  SidebarOverlay,
+} from '@/components/layout/SidebarProvider';
+import { AppSidebar } from '@/components/layout/AppSidebar';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { Plans } from '@/pages/Plans';
+import { CheckoutSuccess } from '@/pages/CheckoutSuccess';
+import { CheckoutCancel } from '@/pages/CheckoutCancel';
+import { Account } from '@/pages/Account';
+import { Login } from '@/pages/Login';
+import { Register } from '@/pages/Register';
+import { isAuthenticated, fetchMe } from '@/lib/api';
+import '@/index.css';
 
 const queryClient = new QueryClient();
 
-function Nav() {
-  const navigate = useNavigate();
-  const [token, setToken] = useState(() => isAuthenticated());
+function PlansRoute() {
+  const token = isAuthenticated();
+  const { data: me, isLoading } = useQuery({
+    queryKey: ['me'],
+    queryFn: fetchMe,
+    enabled: !!token,
+  });
+  if (token && !isLoading && me?.subscription?.status === 'active') {
+    return <Navigate to='/account' replace />;
+  }
+  return <Plans />;
+}
 
+function HomePage() {
+  return (
+    <div className='space-y-4'>
+      <h1 className='text-2xl font-semibold tracking-tight'>Bem-vindo</h1>
+      <p className='text-muted-foreground'>
+        <Link
+          to='/plans'
+          className='text-primary underline-offset-4 hover:underline'
+        >
+          Ver planos
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+function AppWithSidebar({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider defaultCollapsed={false}>
+      <SidebarOverlay />
+      <AppSidebar />
+      {children}
+    </SidebarProvider>
+  );
+}
+
+function AppRoutes() {
+  const [, setToken] = useState(() => isAuthenticated());
   const handleLoginSuccess = useCallback(() => setToken(true), []);
-  const handleLogout = useCallback(() => {
-    logout();
-    setToken(false);
-    navigate('/login');
-  }, [navigate]);
 
   return (
-    <>
-      <nav style={{ padding: '12px 24px', borderBottom: '1px solid #eee' }}>
-        <Link to="/">Início</Link>
-        <span style={{ margin: '0 12px' }}>|</span>
-        <Link to="/plans">Planos</Link>
-        <span style={{ margin: '0 12px' }}>|</span>
-        {token ? (
-          <button type="button" onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit', color: 'inherit', textDecoration: 'underline' }}>
-            Sair
-          </button>
-        ) : (
-          <Link to="/login">Entrar</Link>
-        )}
-      </nav>
-      <Routes>
-        <Route path="/" element={<div style={{ padding: 24 }}><h1>Bem-vindo</h1><Link to="/plans">Ver planos</Link></div>} />
-        <Route path="/plans" element={<Plans />} />
-        <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/checkout/success" element={<CheckoutSuccess />} />
-        <Route path="/checkout/cancel" element={<CheckoutCancel />} />
-      </Routes>
-    </>
+    <Routes>
+      <Route
+        path='/login'
+        element={<Login onLoginSuccess={handleLoginSuccess} />}
+      />
+      <Route path='/register' element={<Register />} />
+      <Route
+        path='/*'
+        element={
+          <AppWithSidebar>
+            <Routes>
+              <Route element={<MainLayout />}>
+                <Route index element={<HomePage />} />
+                <Route path='plans' element={<PlansRoute />} />
+                <Route path='account' element={<Account />} />
+                <Route path='checkout/success' element={<CheckoutSuccess />} />
+                <Route path='checkout/cancel' element={<CheckoutCancel />} />
+              </Route>
+            </Routes>
+          </AppWithSidebar>
+        }
+      />
+    </Routes>
   );
 }
 
@@ -53,7 +93,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Nav />
+        <AppRoutes />
       </BrowserRouter>
     </QueryClientProvider>
   );

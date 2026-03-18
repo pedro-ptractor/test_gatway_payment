@@ -70,3 +70,48 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
     token,
   });
 }
+
+export async function getMe(req: FastifyRequest, reply: FastifyReply) {
+  const userId = req.user.id;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      subscriptions: {
+        orderBy: { currentPeriodEnd: 'desc' },
+        take: 1,
+        select: {
+          id: true,
+          status: true,
+          currentPeriodEnd: true,
+          plan: {
+            select: { id: true, name: true, code: true, interval: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new HttpError('User not found', 404);
+  }
+
+  const subscription = user.subscriptions[0] ?? null;
+
+  return reply.status(200).send({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    subscription: subscription
+      ? {
+          id: subscription.id,
+          status: subscription.status,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          plan: subscription.plan,
+        }
+      : null,
+  });
+}

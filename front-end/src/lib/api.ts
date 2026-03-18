@@ -84,6 +84,22 @@ export async function createCheckoutSession(
   );
 }
 
+export type ConfirmCheckoutSessionResponse = {
+  status: string;
+  subscriptionId: string | null;
+  planId: string | null;
+};
+
+export async function confirmCheckoutSession(
+  sessionId: string,
+): Promise<ConfirmCheckoutSessionResponse> {
+  const params = new URLSearchParams({ session_id: sessionId });
+  return apiFetch<ConfirmCheckoutSessionResponse>(
+    `/checkout/confirm-session?${params.toString()}`,
+    { method: 'GET' },
+  );
+}
+
 // --- Auth ---
 
 export type LoginResponse = { token: string };
@@ -122,4 +138,25 @@ export async function register(
 
 export function logout(): void {
   removeToken();
+}
+
+// --- Me (perfil + assinatura) ---
+
+export type MeSubscription = {
+  id: string;
+  status: string;
+  currentPeriodEnd: string;
+  plan: { id: string; name: string; code: string; interval: string };
+};
+
+export type MeResponse = {
+  id: string;
+  name: string;
+  email: string;
+  subscription: MeSubscription | null;
+};
+
+export async function fetchMe(): Promise<MeResponse> {
+  console.log('fetchMe');
+  return apiFetch<MeResponse>('/me', { method: 'GET' });
 }
