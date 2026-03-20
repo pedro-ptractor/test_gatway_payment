@@ -3,6 +3,7 @@ import 'dotenv/config';
 
 const envSchema = z.object({
   DATABASE_URL: z.string(),
+  DIRECT_URL: z.string().optional(),
   HOST: z.string().default('127.0.0.1'),
   PORT: z.string().default('3333'),
   JWT_SECRET: z.string(),
